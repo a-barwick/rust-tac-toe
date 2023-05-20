@@ -1,5 +1,4 @@
-use handlebars::Handlebars;
-use std::{collections::HashMap, io};
+use std::io;
 
 fn main() {
     let player_one = Player {
@@ -28,27 +27,7 @@ impl<'a> GameSession<'a> {
 
     fn start(&mut self) {
         println!("Welcome to Tic-Tac-Toe!");
-        loop {
-            let selected_cell = self.game.get_player_selection();
-            self.game.set_move(selected_cell);
-            match self.game.get_state() {
-                GameState::InProgress => {
-                    if self.game.current_player.symbol == self.player_one.symbol {
-                        self.game.set_current_player(self.player_two);
-                    } else {
-                        self.game.set_current_player(self.player_one);
-                    }
-                }
-                GameState::Win => {
-                    println!("Player {:?} wins!", self.game.current_player.symbol);
-                    break;
-                }
-                GameState::Draw => {
-                    println!("Draw!");
-                    break;
-                }
-            }
-        }
+        self.game.run(self.player_one, self.player_two);
     }
 }
 
@@ -68,29 +47,34 @@ impl<'a> Game<'a> {
     /// Draws the current board with numbers on the cells
     /// that the current player can select from
     fn draw_board(&self) {
-        let mut hb = Handlebars::new();
-        let source = "
-            -------------
-            | {{0}} | {{1}} | {{2}} |
-            |---|---|---|
-            | {{3}} | {{4}} | {{5}} |
-            |---|---|---|
-            | {{6}} | {{7}} | {{8}} |
-            -------------
-        ";
-        hb.register_template_string("board", source).unwrap();
-        let mut hm = HashMap::new();
-        for (i, cell) in self.board.cells.iter().enumerate() {
-            hm.insert(
-                i,
-                match cell.value {
-                    Some(PlayerSymbol::X) => "X".to_string(),
-                    Some(PlayerSymbol::O) => "O".to_string(),
-                    None => i.to_string(),
-                },
-            );
-        }
-        println!("{}", hb.render("board", &hm).unwrap());
+        let board_repr: Vec<String> = self
+            .board
+            .cells
+            .iter()
+            .enumerate()
+            .map(|(i, cell)| match cell.value {
+                Some(PlayerSymbol::X) => "X".to_string(),
+                Some(PlayerSymbol::O) => "O".to_string(),
+                None => i.to_string(),
+            })
+            .collect();
+
+        println!("\n-------------");
+        println!(
+            "| {} | {} | {} |",
+            board_repr[0], board_repr[1], board_repr[2]
+        );
+        println!("|---|---|---|");
+        println!(
+            "| {} | {} | {} |",
+            board_repr[3], board_repr[4], board_repr[5]
+        );
+        println!("|---|---|---|");
+        println!(
+            "| {} | {} | {} |",
+            board_repr[6], board_repr[7], board_repr[8]
+        );
+        println!("-------------\n");
     }
 
     fn get_state(&self) -> GameState {
@@ -148,6 +132,30 @@ impl<'a> Game<'a> {
         };
         println!("Current player selected {:?}", selected_index);
         selected_index
+    }
+
+    fn run(&mut self, player_one: &'a Player, player_two: &'a Player) {
+        loop {
+            let selected_cell = self.get_player_selection();
+            self.set_move(selected_cell);
+            match self.get_state() {
+                GameState::InProgress => {
+                    if self.current_player.symbol == player_one.symbol {
+                        self.set_current_player(player_two);
+                    } else {
+                        self.set_current_player(player_one);
+                    }
+                }
+                GameState::Win => {
+                    println!("Player {:?} wins!", self.current_player.symbol);
+                    break;
+                }
+                GameState::Draw => {
+                    println!("Draw!");
+                    break;
+                }
+            }
+        }
     }
 
     fn set_current_player(&mut self, player: &'a Player) {
