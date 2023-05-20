@@ -2,39 +2,41 @@ use handlebars::Handlebars;
 use std::{collections::HashMap, io};
 
 fn main() {
-    println!("Welcome to Tic-Tac-Toe!");
     let player_one = Player {
         symbol: PlayerSymbol::X,
     };
     let player_two = Player {
         symbol: PlayerSymbol::O,
     };
-    let mut session = GameSession::new(&player_one, &player_two);
-    session.start();
+    GameSession::new(&player_one, &player_two).start();
 }
 
 struct GameSession<'a> {
     game: Game<'a>,
+    player_one: &'a Player,
+    player_two: &'a Player,
 }
 
 impl<'a> GameSession<'a> {
     fn new(player_one: &'a Player, player_two: &'a Player) -> GameSession<'a> {
         GameSession {
-            game: Game::new(player_one, player_two),
+            game: Game::new(&player_one),
+            player_one,
+            player_two,
         }
     }
 
     fn start(&mut self) {
+        println!("Welcome to Tic-Tac-Toe!");
         loop {
             let selected_cell = self.game.get_player_selection();
             self.game.set_move(selected_cell);
-            self.game.draw_board();
             match self.game.get_state() {
                 GameState::InProgress => {
-                    if self.game.current_player.symbol == self.game.player_one.symbol {
-                        self.game.set_current_player(self.game.player_two);
+                    if self.game.current_player.symbol == self.player_one.symbol {
+                        self.game.set_current_player(self.player_two);
                     } else {
-                        self.game.set_current_player(self.game.player_one);
+                        self.game.set_current_player(self.player_one);
                     }
                 }
                 GameState::Win => {
@@ -52,51 +54,20 @@ impl<'a> GameSession<'a> {
 
 struct Game<'a> {
     board: Board,
-    player_one: &'a Player,
-    player_two: &'a Player,
     current_player: &'a Player,
 }
 
 impl<'a> Game<'a> {
-    fn new(player_one: &'a Player, player_two: &'a Player) -> Game<'a> {
+    fn new(current_player: &'a Player) -> Game<'a> {
         Game {
             board: Board::new(),
-            player_one,
-            player_two,
-            current_player: player_one,
+            current_player,
         }
-    }
-
-    /// Draws the current state of the game board
-    fn draw_board(&self) {
-        let mut hb = Handlebars::new();
-        let source = "
-            -------------
-            | {{0}} | {{1}} | {{2}} |
-            |---|---|---|
-            | {{3}} | {{4}} | {{5}} |
-            |---|---|---|
-            | {{6}} | {{7}} | {{8}} |
-            -------------
-        ";
-        hb.register_template_string("board", source).unwrap();
-        let mut hm = HashMap::new();
-        for (i, cell) in self.board.cells.iter().enumerate() {
-            hm.insert(
-                i,
-                match cell.value {
-                    Some(PlayerSymbol::X) => "X",
-                    Some(PlayerSymbol::O) => "O",
-                    None => " ",
-                },
-            );
-        }
-        println!("{}", hb.render("board", &hm).unwrap());
     }
 
     /// Draws the current board with numbers on the cells
     /// that the current player can select from
-    fn draw_board_with_selections(&self) {
+    fn draw_board(&self) {
         let mut hb = Handlebars::new();
         let source = "
             -------------
@@ -163,7 +134,7 @@ impl<'a> Game<'a> {
 
     fn get_player_selection(&self) -> i8 {
         println!("Type the number from one of the available cells:");
-        self.draw_board_with_selections();
+        self.draw_board();
         let selected_index = loop {
             let mut user_input = String::new();
             if let Err(_) = io::stdin().read_line(&mut user_input) {
