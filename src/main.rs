@@ -1,33 +1,27 @@
 use std::io;
 
 fn main() {
-    let player_one = Player {
-        symbol: PlayerSymbol::X,
-    };
-    let player_two = Player {
-        symbol: PlayerSymbol::O,
-    };
-    GameSession::new(&player_one, &player_two).start();
+    GameSession::start();
 }
 
 struct GameSession<'a> {
     game: Game<'a>,
-    player_one: &'a Player,
-    player_two: &'a Player,
 }
 
 impl<'a> GameSession<'a> {
-    fn new(player_one: &'a Player, player_two: &'a Player) -> GameSession<'a> {
+    fn start() {
+        println!("Welcome to Tic-Tac-Toe!");
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let player_two = Player {
+            symbol: PlayerSymbol::O,
+        };
         GameSession {
             game: Game::new(&player_one),
-            player_one,
-            player_two,
         }
-    }
-
-    fn start(&mut self) {
-        println!("Welcome to Tic-Tac-Toe!");
-        self.game.run(self.player_one, self.player_two);
+        .game
+        .run(&player_one, &player_two);
     }
 }
 
@@ -116,7 +110,7 @@ impl<'a> Game<'a> {
         GameState::InProgress
     }
 
-    fn get_player_selection(&self) -> i8 {
+    fn get_player_selection(&self) -> usize {
         println!("Type the number from one of the available cells:");
         self.draw_board();
         let selected_index = loop {
@@ -124,8 +118,8 @@ impl<'a> Game<'a> {
             if let Err(_) = io::stdin().read_line(&mut user_input) {
                 println!("No input, don't be typin nothin!");
             }
-            match user_input.trim().parse::<i8>() {
-                Ok(result) if result >= 0 && result < 9 => break result,
+            match user_input.trim().parse::<usize>() {
+                Ok(result) if result < 9 => break result,
                 Ok(_) => println!("Pick an available number from the board:"),
                 Err(_) => println!("Invalid input, pick a number from the board:"),
             };
@@ -162,20 +156,20 @@ impl<'a> Game<'a> {
         self.current_player = player;
     }
 
-    fn set_move(&mut self, cell_index: i8) {
-        self.board.cells[cell_index as usize].value = Some(self.current_player.symbol);
+    fn set_move(&mut self, cell_index: usize) {
+        self.board.cells[cell_index].value = Some(self.current_player.symbol);
     }
 }
 
 struct Board {
-    cells: Vec<Box<Cell>>,
+    cells: Vec<Cell>,
 }
 
 impl Board {
     fn new() -> Board {
-        let mut cells: Vec<Box<Cell>> = Vec::with_capacity(9);
+        let mut cells: Vec<Cell> = Vec::with_capacity(9);
         for _ in 0..9 {
-            cells.push(Box::new(Cell { value: None }))
+            cells.push(Cell { value: None })
         }
         Board { cells }
     }
