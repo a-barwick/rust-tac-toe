@@ -162,6 +162,7 @@ impl<'a> Game<'a> {
     }
 }
 
+#[derive(PartialEq, Debug)]
 enum GameState {
     InProgress,
     Win,
@@ -189,7 +190,79 @@ mod tests {
     }
 
     #[test]
-    fn test_run() {
+    fn test_draw_board() {
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let game = Game::new(&player_one, &mock_input);
+        game.draw_board();
+    }
+
+    #[test]
+    fn test_get_state_in_progress() {
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let mut game = Game::new(&player_one, &mock_input);
+        assert_eq!(game.get_state(), GameState::InProgress);
+    }
+
+    #[test]
+    fn test_get_state_win() {
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let mut game = Game::new(&player_one, &mock_input);
+        game.board.cells[0].value = Some(PlayerSymbol::X);
+        game.board.cells[1].value = Some(PlayerSymbol::X);
+        game.board.cells[2].value = Some(PlayerSymbol::X);
+        assert_eq!(game.get_state(), GameState::Win);
+    }
+
+    #[test]
+    fn test_get_state_draw() {
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let mut game = Game::new(&player_one, &mock_input);
+        game.board.cells[0].value = Some(PlayerSymbol::X);
+        game.board.cells[1].value = Some(PlayerSymbol::O);
+        game.board.cells[2].value = Some(PlayerSymbol::X);
+        game.board.cells[3].value = Some(PlayerSymbol::O);
+        game.board.cells[4].value = Some(PlayerSymbol::X);
+        game.board.cells[5].value = Some(PlayerSymbol::O);
+        game.board.cells[6].value = Some(PlayerSymbol::O);
+        game.board.cells[7].value = Some(PlayerSymbol::X);
+        game.board.cells[8].value = Some(PlayerSymbol::O);
+        assert_eq!(game.get_state(), GameState::Draw);
+    }
+
+    #[test]
+    fn test_get_player_selection() {
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let game = Game::new(&player_one, &mock_input);
+        assert_eq!(game.get_player_selection().unwrap(), 1);
+    }
+
+    #[test]
+    fn test_set_current_player() {
         let player_one = Player {
             symbol: PlayerSymbol::X,
         };
@@ -200,7 +273,8 @@ mod tests {
             input: "1".to_string(),
         };
         let mut game = Game::new(&player_one, &mock_input);
-        game.run(&player_one, &player_two);
-        assert_eq!(game.board.cells[0].value, Some(PlayerSymbol::X));
+        assert_eq!(game.current_player.symbol, player_one.symbol);
+        game.set_current_player(&player_two);
+        assert_eq!(game.current_player.symbol, player_two.symbol);
     }
 }
