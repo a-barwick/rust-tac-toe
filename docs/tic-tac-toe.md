@@ -39,3 +39,9 @@
 8. If Win, show win text with current player
 9. If Draw, show draw text
 10. If InProgress, restart at 3. with Player 2
+
+
+# TODO
+
+- [ ] Refactor out game loop to allow testing
+- [ ] Add tests for game loop
