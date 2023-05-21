@@ -1,5 +1,7 @@
 mod game;
+mod io;
 
 fn main() {
-    game::session::start();
+    let input = io::input::StdinInput;
+    game::session::start(&input);
 }

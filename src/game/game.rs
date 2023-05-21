@@ -1,20 +1,22 @@
 use super::board::Board;
 use super::player::{Player, PlayerSymbol};
 
-use std::io;
+use crate::io::input::Input;
 
 /// Represents the game state and logic
 pub struct Game<'a> {
     pub board: Board,
     pub current_player: &'a Player,
+    pub input: &'a dyn Input,
 }
 
 impl<'a> Game<'a> {
     /// Creates a new game with the current player
-    pub fn new(current_player: &'a Player) -> Game<'a> {
+    pub fn new(current_player: &'a Player, input: &'a dyn Input) -> Game<'a> {
         Game {
             board: Board::new(),
             current_player,
+            input,
         }
     }
 
@@ -126,10 +128,13 @@ impl<'a> Game<'a> {
     fn get_player_selection(&self) -> Result<usize, &'static str> {
         println!("Type the number from one of the available cells:");
         self.draw_board();
-        let mut user_input = String::new();
-        if let Err(_) = io::stdin().read_line(&mut user_input) {
-            println!("No input, don't be typin nothin!");
-        }
+        let user_input = match self.input.read() {
+            Ok(input) => input,
+            Err(msg) => {
+                println!("{}", msg);
+                return self.get_player_selection();
+            }
+        };
         match user_input.trim().parse::<usize>() {
             Ok(result) if result < 9 => return Ok(result),
             Ok(_) => return Err("Pick an available number from the board:"),
@@ -165,6 +170,8 @@ enum GameState {
 
 #[cfg(test)]
 mod tests {
+    use crate::io::input::MockInput;
+
     use super::*;
 
     #[test]
@@ -172,7 +179,28 @@ mod tests {
         let player_one = Player {
             symbol: PlayerSymbol::X,
         };
-        let game = Game::new(&player_one);
-        assert_eq!(game.current_player.symbol, PlayerSymbol::X);
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let game = Game::new(&player_one, &mock_input);
+        assert_eq!(game.current_player.symbol, player_one.symbol);
+        assert_eq!(game.board.cells.len(), 9);
+        assert_eq!(game.board.cells[0].value, None);
+    }
+
+    #[test]
+    fn test_run() {
+        let player_one = Player {
+            symbol: PlayerSymbol::X,
+        };
+        let player_two = Player {
+            symbol: PlayerSymbol::O,
+        };
+        let mock_input = MockInput {
+            input: "1".to_string(),
+        };
+        let mut game = Game::new(&player_one, &mock_input);
+        game.run(&player_one, &player_two);
+        assert_eq!(game.board.cells[0].value, Some(PlayerSymbol::X));
     }
 }
